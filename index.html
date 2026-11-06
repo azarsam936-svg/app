@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ابزارهای آموزشی</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ابزار آموزشی">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root{
     --bg1:#1e3a8a; --bg2:#7c3aed; --bg3:#ec4899;
@@ -101,6 +109,21 @@
   }
   .toast.show{transform:translate(-50%,0)}
 
+
+  /* install */
+  .install-btn{
+    display:none;align-items:center;justify-content:center;gap:8px;
+    margin:0 auto 12px;padding:10px 20px;border-radius:22px;border:1px solid var(--glass-b);
+    background:rgba(255,255,255,.96);color:#4338ca;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 18px rgba(0,0,0,.22);transition:transform .15s;
+  }
+  .install-btn.show{display:flex}
+  .install-btn:active{transform:scale(.95)}
+  .install-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ios-tip{font-size:12.5px;line-height:2;color:#334155}
+  .ios-tip b{color:#111827}
+  .ios-ok{width:100%;margin-top:12px;padding:12px;border:0;border-radius:14px;background:#4f46e5;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+
   @media (max-width:430px){
     body{background:none}
     .phone{width:100vw;height:100vh;max-height:none;border-radius:0;box-shadow:none}
@@ -165,6 +188,11 @@
     </button>
   </div>
 
+  <button class="install-btn" id="installBtn" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+    نصب برنامه روی گوشی
+  </button>
+
   <div class="dock">
     <div class="home-bar"></div>
     طراح: <b>سما بنا آذرپناه</b><br>
@@ -177,6 +205,18 @@
     <h2>بازی‌های آموزشی</h2>
     <p class="sub">با انتخاب هر بازی، فایل HTML آن دانلود می‌شود.</p>
     <div id="list"></div>
+  </div>
+
+  <div class="sheet" id="iosSheet" role="dialog" aria-label="نصب برنامه">
+    <div class="grab"></div>
+    <h2>نصب روی صفحه اصلی</h2>
+    <p class="sub">در مرورگر Safari این مراحل را انجام دهید:</p>
+    <div class="ios-tip">
+      ۱. روی دکمه <b>اشتراک‌گذاری</b> (مربع با فلش رو به بالا) بزنید.<br>
+      ۲. گزینه <b>Add to Home Screen</b> را انتخاب کنید.<br>
+      ۳. روی <b>Add</b> بزنید.
+    </div>
+    <button class="ios-ok" id="iosOk" type="button">متوجه شدم</button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -254,6 +294,40 @@
     $("clock").textContent=d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   }
   tick(); setInterval(tick,20000);
+
+  // ---- PWA install ----
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
+  const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const installBtn = $("installBtn"), iosSheet = $("iosSheet");
+  let deferred = null;
+
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault(); deferred = e;
+    if (!isStandalone) installBtn.classList.add("show");
+  });
+  window.addEventListener("appinstalled", () => {
+    deferred = null; installBtn.classList.remove("show"); toast("برنامه نصب شد");
+  });
+  if (isIOS && !isStandalone) installBtn.classList.add("show");
+
+  const setIos = o => { iosSheet.classList.toggle("open",o); bg.classList.toggle("open",o); };
+  installBtn.onclick = async () => {
+    if (deferred) {
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null; installBtn.classList.remove("show");
+    } else if (isIOS) {
+      setIos(true);
+    } else {
+      toast("از منوی مرورگر گزینه «Install» را بزنید");
+    }
+  };
+  $("iosOk").onclick = () => setIos(false);
+  bg.addEventListener("click", () => setIos(false));
 </script>
 </body>
 </html>
