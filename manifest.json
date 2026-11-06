@@ -1,7 +1,7 @@
 {
-  "name": "ابزارهای آموزشی",
-  "short_name": "ابزار آموزشی",
-  "description": "مجموعه ابزارهای آموزشی",
+  "name": "Edu Tools",
+  "short_name": "EduTools",
+  "description": "Educational tools",
   "id": "/app/",
   "start_url": "/app/",
   "scope": "/app/",
